@@ -2,158 +2,155 @@
 
 namespace Insly\Calculator;
 
-abstract class Calculator
-{
+use DateTime;
+
+class Calculator extends AbstractCalculator
+{   
     /**
-     * Policy base price from car value.
+     * Base price surge rate
+     */
+    const SURGE_RATE = 13;
+
+    /**
+     * Day to implement surge rate
+     */
+    const SURGE_RATE_DAY = 'Friday';
+
+    /**
+     * Time surge rate starts
+     */
+    const SURGE_RATE_START_TIME = '15:00';
+
+    /**
+     * Time surge rate ends
+     */
+    const SURGE_RATE_END_TIME = '20:00';
+
+    /**
+     * Initialize calculator class
      * 
-     * @var integer
+     * @param int $carValue
+     * @param int $taxAmount
+     * @param int $numberOfPayments
      */
-    protected $basePrice = 11;
+    public function __construct(int $carValue, int $taxAmount, int $numberOfPayments)
+    {
+        $this->setCarValue($carValue);
+        $this->setTax($taxAmount);
+        $this->setNumberOfPayments($numberOfPayments);
+        $this->setSubmissionDate(new DateTime);
+    }
 
     /**
-     * Commission value that will be added into base price.
+     * Calculate installments
      * 
-     * @var int
+     * @return Insly\Calculator\AbstractCalculator
      */
-    protected $commission = 17;
+    public function calculate()
+    {
+        if($this->isSurgeRate($this->getSubmissionDate())) {
+            $this->setBasePrice(self::SURGE_RATE);
+        }
+
+        //calculate total base price
+        $basePrice = $this->calculateBasePrice($this->getCarValue(), $this->getBasePrice());
+        //calculate total commission
+        $commission = $this->calculateCommission($basePrice, $this->getCommission());
+        //caclculate total tax
+        $tax = $this->calculateTax($basePrice, $this->getTax());
+        //set policy
+        $this->setPolicy($basePrice, $commission, $tax);
+        //calculate installments
+        if ($this->getNumberOfPayments() > 1) {
+            $counter = 1;
+            while($counter <= $this->getNumberOfPayments()) {
+                list($installmentBasePrice, $installmentCommission, $installmentTax) = $this->calculateInstallment($this->getNumberOfPayments(), $basePrice, $commission, $tax);
+
+                $this->addInstallment($installmentBasePrice, $installmentCommission, $installmentTax);
+                
+                $counter++;
+            }
+        } else {
+            $this->addInstallment($basePrice, $commission, $tax);
+        }
+
+        return $this;
+    }
 
     /**
-     * Car estimated value (100 - 100,000 EUR).
+     * Determine is surge rate applicable
      * 
-     * @var int
-     */
-    protected $carValue = 0;
-
-    /**
-     * Tax amount that will be added into base price (0-100%).
+     * @param DateTime
      * 
-     * @var int
+     * @return boolean
      */
-    protected $tax = 0;
+    protected function isSurgeRate(DateTime $submissionDate)
+    {
+        $day = $submissionDate->format('l');
+        $time = $submissionDate->format('H:i');
+
+        if ($day === self::SURGE_RATE_DAY && $time >= self::SURGE_RATE_START_TIME && $time <= self::SURGE_RATE_END_TIME) {
+            return true;
+        }
+
+        return false;
+    }
 
     /**
-     * Number of installments (1-12).
-     */
-    protected $numberOfPayments = 1;
-
-    protected $basePriceAmount;
-
-    protected $commissionAmount;
-
-    protected $taxAmount;
-
-    /**
-     * Installments calculated.
+     * Calculate base price amount
      * 
-     * @var array
+     * @param float $carValue
+     * @param float $basePrice
+     * 
+     * @return float
      */
-    protected $installments = [];
-
-    public function setBasePrice(int $value)
+    protected function calculateBasePrice(float $carValue, float $basePrice)
     {
-        $this->basePrice = $value;
-
-        return $this;
+        return round((float) $carValue * ($basePrice/100), 2);
     }
 
-    public function getBasePrice() : int
+     /**
+     * Calculate commission amount
+     * 
+     * @param float $basePriceamount
+     * @param float $commission
+     * 
+     * @return float
+     */
+    protected function calculateCommission(float $basePriceAmount, float $commission)
     {
-        return $this->basePrice;
+        return round((float) $basePriceAmount * ($commission/100), 2);
     }
 
-    public function getCommission() : int
+     /**
+     * Calculate tax amount
+     * 
+     * @param float $basePriceAmount
+     * @param float $tax
+     * 
+     * @return float
+     */
+    protected function calculateTax(float $basePriceAmount, float $tax)
     {
-        return $this->commission;
+        return round((float) $basePriceAmount * ($tax/100), 2);
     }
 
-    public function setCarValue(int $value)
+    /**
+     * Calculate installments for payments more than 1
+     * 
+     * @param int $numberOfPayments
+     * @param float $totalBasePriceAmount
+     * @param float $totalCommissionAmount
+     * @param $totalTaxAmount
+     * 
+     * @return array
+     */
+    protected function calculateInstallment(int $numberOfPayments, float $totalBasePriceAmount, float $totalCommissionAmount, float $totalTaxAmount)
     {
-        $this->carValue = $value;
-
-        return $this;
-    }
-
-    public function getCarValue() : int
-    {
-        return $this->carValue;
-    }
-
-    public function setTax(int $value)
-    {
-        $this->tax = $value;
-
-        return $this;
-    }
-
-    public function getTax() : int
-    {
-        return $this->tax;
-    }
-
-    public function getNumberOfPayments() : int
-    {
-        return $this->numberOfPayments;
-    }
-
-    public function setNumberOfPayments(int $value)
-    {
-        $this->numberOfPayments = $value;
-
-        return $this;
-    }
-
-    public function getBasePriceAmount() : int
-    {
-        return $this->basePriceAmount;
-    }
-
-    public function setBasePriceAmount(int $value)
-    {
-        $this->basePriceAmount = $value;
-
-        return $this;
-    }
-
-    public function getCommissionAmount() : int
-    {
-        return $this->commissionAmount;
-    }
-
-    public function setCommissionAmount(int $value)
-    {
-        $this->commissionAmount = $value;
-
-        return $this;
-    }
-
-    public function getTaxAmount() : int
-    {
-        return $this->TaxAmount;
-    }
-
-    public function setTaxAmount(int $value)
-    {
-        $this->TaxAmount = $value;
-
-        return $this;
-    }
-
-    public function getInstallments() : array
-    {
-        return $this->installments;
-    }
-
-    public function addInstallment(int $basePrice, int $commission, $tax)
-    {
-        $this->installments[] = [
-            'base_price' => $basePrice,
-            'commission' => $commission,
-            'tax' => $tax
+        return [
+            round((float) $totalBasePriceAmount/$numberOfPayments, 2),
+            round((float) $totalCommissionAmount/$numberOfPayments, 2),
+            round((float) $totalTaxAmount/$numberOfPayments, 2)
         ];
-
-        return $this;
     }
-
-    abstract public function calculate();
 }

@@ -2,10 +2,10 @@
 
 namespace Insly\Calculator\TestCase;
 
+use Insly\Calculator\Policy;
 use PHPUnit\Framework\TestCase;
-use Insly\Calculator\Installment;
 
-class InstallmentTest extends TestCase
+class PolicyTest extends TestCase
 {
     /**
      * Policy instance
@@ -16,7 +16,7 @@ class InstallmentTest extends TestCase
 
     public function setUp()
     {
-        $this->stub = new Installment(550.0, 93.5, 55.0);
+        $this->stub = new Policy(1100.0, 187.0, 110.0);
     }
 
     public function tearDown()
@@ -29,7 +29,7 @@ class InstallmentTest extends TestCase
      */
     public function testGetBasePriceAmount()
     {
-        $this->assertSame(550.0, $this->stub->getBasePriceAmount());
+        $this->assertSame(1100.0, $this->stub->getBasePriceAmount());
     }
 
     /**
@@ -37,7 +37,7 @@ class InstallmentTest extends TestCase
      */
     public function testGetCommissionAmount()
     {
-        $this->assertSame(93.5, $this->stub->getCommissionAmount());
+        $this->assertSame(187.0, $this->stub->getCommissionAmount());
     }
 
     /**
@@ -45,7 +45,7 @@ class InstallmentTest extends TestCase
      */
     public function testGetTaxAmount()
     {
-        $this->assertSame(55.0, $this->stub->getTaxAmount());
+        $this->assertSame(110.0, $this->stub->getTaxAmount());
     }
 
     /**
@@ -53,6 +53,6 @@ class InstallmentTest extends TestCase
      */
     public function testGetGrandTotalAmount()
     {
-        $this->assertSame(698.5, $this->stub->getGrandTotalAmount());
+        $this->assertSame(1397.0, $this->stub->getGrandTotalAmount());
     }
 }

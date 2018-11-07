@@ -2,7 +2,7 @@
 
 namespace Insly\Calculator;
 
-class Installment implements Contracts\InstallmentInterface
+class Policy implements Contracts\PolicyInterface
 {
     protected $basePrice;
 
