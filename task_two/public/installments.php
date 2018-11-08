@@ -73,6 +73,8 @@
                 <div class="col-sm-4 mb-3">
                     <div class="card">
                         <div class="card-body">
+                            <h6>Installment <?php echo $index+1; ?></h6>
+                            <hr>
                             <dl class="row">
                                 <dt class="col-sm-7">
                                     Base Premium
