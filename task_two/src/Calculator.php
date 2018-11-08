@@ -70,6 +70,22 @@ class Calculator extends AbstractCalculator
                 
                 $counter++;
             }
+
+            //Determine if adjustment is needed for the installments
+            $installmentsTotal = 0;
+            foreach ($this->getInstallments() as $installment) {
+                $installmentsTotal += $installment->getGrandTotalAmount();
+            }
+
+            if ($this->isAdjustmentNeeded($this->getPolicy()->getGrandTotalAmount(), $installmentsTotal)) {
+                $policy = $this->getPolicy();
+                $numberOfInstallments = $this->getNumberOfPayments();
+                $installments = $this->getInstallments();
+                unset($installments[$numberOfInstallments-1]);                
+
+                list($basePrice, $commission, $tax) = $this->adjustLastInstallment($policy, $installments);
+                $this->addInstallment($basePrice, $commission, $tax, true);
+            }
         } else {
             $this->addInstallment($basePrice, $commission, $tax);
         }
@@ -151,6 +167,54 @@ class Calculator extends AbstractCalculator
             round((float) $totalBasePriceAmount/$numberOfPayments, 2),
             round((float) $totalCommissionAmount/$numberOfPayments, 2),
             round((float) $totalTaxAmount/$numberOfPayments, 2)
+        ];
+    }
+
+    /**
+     * Determine if adjustment is need to match the policy grand total
+     * 
+     * @param float $grandTotal
+     * @param float $installmentsTotal
+     * 
+     * @return boolean
+     */
+    protected function isAdjustmentNeeded(float $grandTotal, float $installmentsTotal)
+    {
+        if($installmentsTotal > $grandTotal) {
+            return true;
+        }
+
+        if($grandTotal > $installmentsTotal) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Adjust the last installment
+     * 
+     * @param Insly\Calculator\Contracts\PolicyInterface $policy
+     * @param array $installments
+     * 
+     * @return array
+     */
+    protected function adjustLastInstallment(Policy $policy, array $installments)
+    {
+        $total = 0;
+        $totalCommission = 0;
+        $totalTax = 0;
+
+        foreach($installments as $installment) {
+            $total += $installment->getBasePriceAmount();
+            $totalCommission += $installment->getCommissionAmount();
+            $totalTax += $installment->getTaxAmount();
+        }
+
+        return [
+            $policy->getBasePriceAmount() - $total,
+            $policy->getCommissionAmount() - $totalCommission,
+            $policy->getTaxAmount() - $totalTax
         ];
     }
 }

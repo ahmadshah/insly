@@ -247,12 +247,18 @@ abstract class AbstractCalculator
      * @param float $basePrice
      * @param float $commission
      * @param float $tax
+     * @param boolean $first
      * 
      * @return Insly\Calculator\AbstractCalculator
      */
-    public function addInstallment(float $basePrice, float $commission, float $tax)
+    public function addInstallment(float $basePrice, float $commission, float $tax, $first = false)
     {
         $this->installments[] = new Installment($basePrice, $commission, $tax);
+
+        if($first) {
+            unset($this->installments[0]);
+            $this->installments = array_reverse($this->installments);
+        }
 
         return $this;
     }
